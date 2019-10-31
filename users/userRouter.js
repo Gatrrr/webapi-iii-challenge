@@ -20,12 +20,9 @@ router.post("/", validateUser, (req, res) => {
 });
 
 
-router.post("/:id/posts", validateUserId, (req, res) => {
-    const rePost = req.body;
-    rePost.user_id = req.params.id;
-  
-    if (rePost) {
-      Posts.insert(rePost)
+router.post("/:id/posts", validateUserId, validatePost, (req, res) => {
+  req.body.user_id = req.params.id
+      Posts.insert(req.body)
         .then(post => {
           res.status(201).json(post);
         })
@@ -34,7 +31,7 @@ router.post("/:id/posts", validateUserId, (req, res) => {
           res.status(500).json({ error: "no luck" });
         });
     }
-});
+);
 
   router.get("/", validateUser, (req, res) => {
     db.get()
@@ -103,10 +100,10 @@ function validateUserId(req, res, next) {
     db.getById(users)
       .then(user => {
         if (user) {
-          next();
           req.user = user;
+          next();
         } else {
-          res.status(400).json({ message: "user not fouond" });
+          res.status(400).json({ message: "user not found" });
         }
       })
       .catch(err => {
@@ -116,15 +113,21 @@ function validateUserId(req, res, next) {
 
 function validateUser(req, res, next) {
    const users = req.body;
-    if (!users) {
-      res.status(500).json({ error: "must be in name format" });
+    if (!users.name) {
+      res.status(400).json({ error: "must be in name format" });
     } else {
       next();
     }
 };
 
 function validatePost(req, res, next) {
-
+  const {text} = req.body
+  if (!text){
+    res.status(400).json({message: 'missing required text field'})
+  } else {
+    next();
+  }
 };
+
 
 module.exports = router;
